@@ -3,17 +3,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'product_details_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  // دالة الإضافة إلى السلة
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String selectedCategory = "الكل";
+
+  // دالة الإضافة للسلة
   Future<void> _addToCart(BuildContext context, Map<String, dynamic> productData) async {
     final user = FirebaseAuth.instance.currentUser;
     const Color primaryOrange = Color(0xFFF57C00);
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("يرجى تسجيل الدخول أولاً")),
+          const SnackBar(content: Text("يرجى تسجيل الدخول أولاً"))
       );
       return;
     }
@@ -41,7 +48,7 @@ class HomeScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("خطأ أثناء الإضافة: $e"), backgroundColor: Colors.red),
+            SnackBar(content: Text("خطأ: $e"), backgroundColor: Colors.red)
         );
       }
     }
@@ -54,27 +61,24 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        // التعديل هنا: جعل العنوان في المنتصف
-        title: const Text("متجر الشهاب", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text("متجر الشهاب",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: primaryOrange,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart, color: Colors.black),
-            onPressed: () => Navigator.pushNamed(context, '/cart'),
-          )
-        ],
+        // تم حذف الأيقونة من هنا
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. قسم الأقسام (عرض أفقي)
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("الأقسام", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text("الأقسام",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
+
+            // قسم الأقسام
             SizedBox(
               height: 120,
               child: StreamBuilder<QuerySnapshot>(
@@ -82,28 +86,40 @@ class HomeScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: primaryOrange));
                   var cats = snapshot.data!.docs;
+
                   return ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: cats.length,
+                    itemCount: cats.length + 1,
                     itemBuilder: (context, index) {
-                      var cat = cats[index].data() as Map<String, dynamic>;
-                      return Column(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            width: 70, height: 70,
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              borderRadius: BorderRadius.circular(15),
-                              image: DecorationImage(
-                                  image: NetworkImage(cat['image'] ?? 'https://via.placeholder.com/150'),
-                                  fit: BoxFit.cover
+                      String catName = (index == 0) ? "الكل" : cats[index - 1]['name'];
+                      String catImg = (index == 0)
+                          ? "https://cdn-icons-png.flaticon.com/512/570/570170.png"
+                          : cats[index - 1]['image'];
+
+                      bool isSelected = selectedCategory == catName;
+
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedCategory = catName),
+                        child: Column(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              width: 70, height: 70,
+                              decoration: BoxDecoration(
+                                color: Colors.white10,
+                                borderRadius: BorderRadius.circular(15),
+                                border: isSelected ? Border.all(color: primaryOrange, width: 2) : null,
+                                image: DecorationImage(image: NetworkImage(catImg), fit: BoxFit.cover),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(cat['name'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                        ],
+                            const SizedBox(height: 5),
+                            Text(catName, style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? primaryOrange : Colors.white70,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            )),
+                          ],
+                        ),
                       );
                     },
                   );
@@ -111,13 +127,20 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            // 2. عرض المنتجات (Grid)
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("أحدث المنتجات", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text("المنتجات",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
+
+            // عرض المنتجات المفلترة
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('products').snapshots(),
+              stream: selectedCategory == "الكل"
+                  ? FirebaseFirestore.instance.collection('products').snapshots()
+                  : FirebaseFirestore.instance
+                  .collection('products')
+                  .where('category', isEqualTo: selectedCategory)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: primaryOrange));
                 var products = snapshot.data!.docs;
@@ -141,15 +164,13 @@ class HomeScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductDetailsScreen(product: pDoc),
-                          ),
+                          MaterialPageRoute(builder: (context) => ProductDetailsScreen(product: pDoc)),
                         );
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.circular(20),
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(20)
                         ),
                         child: Column(
                           children: [
@@ -158,7 +179,7 @@ class HomeScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                                   image: DecorationImage(
-                                      image: NetworkImage(p['imageUrl'] ?? p['image'] ?? 'https://via.placeholder.com/150'),
+                                      image: NetworkImage(p['imageUrl'] ?? p['image'] ?? ''),
                                       fit: BoxFit.cover
                                   ),
                                 ),
@@ -168,10 +189,11 @@ class HomeScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(8.0),
                               child: Column(
                                 children: [
-                                  Text(p['name'] ?? 'منتج',
+                                  Text(p['name'] ?? '',
                                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  Text("${p['price']} SAR", style: const TextStyle(color: primaryOrange, fontWeight: FontWeight.bold)),
+                                      maxLines: 1),
+                                  Text("${p['price']} SAR",
+                                      style: const TextStyle(color: primaryOrange, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 8),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
@@ -180,7 +202,7 @@ class HomeScreen extends StatelessWidget {
                                       minimumSize: const Size(double.infinity, 35),
                                     ),
                                     onPressed: () => _addToCart(context, p),
-                                    child: const Icon(Icons.add_shopping_cart, size: 16, color: Colors.white),
+                                    child: const Icon(Icons.add_shopping_cart, size: 18, color: Colors.white),
                                   ),
                                 ],
                               ),
