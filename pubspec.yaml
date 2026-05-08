@@ -1,0 +1,37 @@
+name: store_manage_f2
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # مكتبات فيربيز الأساسية
+  firebase_core: any
+  firebase_auth: ^6.4.0
+  cloud_firestore: any
+  firebase_storage: any
+  google_sign_in: ^6.2.1
+
+  # مكتبات إدارة الحالة والصور
+  provider: any
+  image_picker: any
+
+  # المكتبة التي طلبتها لتنسيق التاريخ والوقت
+  intl: ^0.19.0
+
+  # أيقونات iOS
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
