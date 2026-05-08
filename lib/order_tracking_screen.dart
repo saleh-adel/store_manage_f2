@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // ستحتاج لإضافة حزمة intl في pubspec.yaml لتنسيق التاريخ
 
 class OrderTrackingScreen extends StatelessWidget {
   const OrderTrackingScreen({super.key});
@@ -14,13 +13,14 @@ class OrderTrackingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text("تتبع طلباتي"),
+        title: const Text("تتبع طلباتي", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // جلب طلبات المستخدم الحالي فقط وترتيبها بالأحدث
+        // جلب طلبات المستخدم الحالي فقط
         stream: FirebaseFirestore.instance
             .collection('orders')
             .where('userId', isEqualTo: user?.uid)
@@ -77,20 +77,12 @@ class OrderTrackingScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("طلب #${order.id.substring(0, 8)}", // عرض جزء من الرقم التسلسلي
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 5),
-                              Text(
-                                data['createdAt'] != null
-                                    ? DateFormat('yyyy-MM-dd – kk:mm').format((data['createdAt'] as Timestamp).toDate())
-                                    : "تاريخ غير معروف",
-                                style: const TextStyle(color: Colors.white38, fontSize: 12),
-                              ),
-                            ],
+                          // عرض رقم الطلب فقط
+                          Text(
+                              "طلب #${order.id.substring(0, 8)}",
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
                           ),
+                          // حالة الطلب
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
@@ -112,9 +104,11 @@ class OrderTrackingScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("إجمالي المبلغ:", style: TextStyle(color: Colors.white70)),
-                          Text("${data['totalPrice']} SAR",
-                              style: const TextStyle(color: primaryOrange, fontWeight: FontWeight.bold, fontSize: 16)),
+                          const Text("إجمالي المبلغ:", style: TextStyle(color: Colors.white70)),
+                          Text(
+                              "${data['totalPrice']} SAR",
+                              style: const TextStyle(color: primaryOrange, fontWeight: FontWeight.bold, fontSize: 16)
+                          ),
                         ],
                       ),
                     ],
