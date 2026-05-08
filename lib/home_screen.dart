@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'product_details_screen.dart'; // تأكد من صحة اسم الملف هنا
+import 'product_details_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -54,7 +54,9 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
+        // التعديل هنا: جعل العنوان في المنتصف
         title: const Text("متجر الشهاب", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        centerTitle: true,
         backgroundColor: primaryOrange,
         elevation: 0,
         actions: [
@@ -135,7 +137,6 @@ class HomeScreen extends StatelessWidget {
                     var pDoc = products[index];
                     var p = pDoc.data() as Map<String, dynamic>;
 
-                    // استخدام GestureDetector لتفعيل الضغط والانتقال لصفحة التفاصيل
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
