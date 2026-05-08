@@ -7,7 +7,7 @@ import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'cart_screen.dart';
 import 'order_tracking_screen.dart';
-
+//12
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
